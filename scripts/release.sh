@@ -54,30 +54,11 @@ done
 
 NOTES="$STAGE/notes.md"
 {
-  echo "## Skills"
-  echo
-  echo "| Skill | Archive | Description |"
+  echo "| Skill | Download | Description |"
   echo "| --- | --- | --- |"
   printf '%s\n' "${ROWS[@]}"
   echo
-  echo "## Install without the CLI"
-  echo
-  echo "Each archive unpacks to a single \`<skill>/\` directory, so it can be dropped straight into an agent's skills directory:"
-  echo
-  echo '```bash'
-  echo "curl -LO https://github.com/$SLUG/releases/latest/download/${ARCHIVES[0]##*/}"
-  echo "unzip ${ARCHIVES[0]##*/} -d ~/.agents/skills/"
-  echo '```'
-  echo
-  echo "Use \`~/.claude/skills/\` or any other agent's skills directory in place of \`~/.agents/skills/\`, or \`.agents/skills/\` for a project-scoped install."
-  echo
-  echo "The \`skills\` CLI can also consume a release archive URL directly:"
-  echo
-  echo '```bash'
-  echo "npx skills add https://github.com/$SLUG/releases/latest/download/${ARCHIVES[0]##*/}"
-  echo '```'
-  echo
-  echo "## Changelog"
+  echo "Unzip into your agent's skills directory (\`~/.agents/skills/\`, \`~/.claude/skills/\`, …), or install directly with \`npx skills add <archive-url>\`."
   echo
   echo "**Full Changelog**: https://github.com/$SLUG/commits/$TAG"
 } > "$NOTES"
