@@ -16,7 +16,7 @@ npx skills add leon-zym/skills --skill coordinate-work
 
 `-g` installs globally instead of into the current project, `-a <agent>` targets a specific agent, and `--list` shows what is available without installing anything.
 
-Prefer not to use the CLI? Grab a skill's zip from [Releases](https://github.com/leon-zym/skills/releases/latest) and unzip it into your agent's skills directory.
+Prefer not to use the CLI? Download the bundled zip from [Releases](https://github.com/leon-zym/skills/releases/latest) and unzip it into your agent's skills directory.
 
 ## Skills
 
