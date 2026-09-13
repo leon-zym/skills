@@ -2,7 +2,7 @@
 
 My personal collection of [Agent Skills](https://agentskills.io) — reusable instruction sets for AI coding agents.
 
-[![skills.sh](https://img.shields.io/badge/skills.sh-leon--zym%2Fskills-blue)](https://skills.sh/leon-zym/skills)
+[![skills.sh](https://skills.sh/b/leon-zym/skills)](https://skills.sh/leon-zym/skills)
 
 ## Install
 
