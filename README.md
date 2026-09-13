@@ -32,22 +32,6 @@ npx skills add leon-zym/skills --list
 | --- | --- |
 | [`coordinate-work`](skills/coordinate-work/SKILL.md) | Runs a delegation-based coding workflow: operating agreement, recoverable state, coherent worker assignments, event-driven coordination, independent review and integration. |
 
-## Layout
-
-Skills live under `skills/<name>/`, where the directory name matches the `name` field in `SKILL.md`:
-
-```text
-skills/
-└── coordinate-work/
-    ├── SKILL.md          # frontmatter + instructions
-    └── references/       # loaded on demand by the agent
-        ├── assignments-and-acceptance.md
-        ├── communication.md
-        └── state-and-recovery.md
-```
-
-Each `SKILL.md` carries YAML frontmatter with the required `name` and `description` fields, plus optional metadata such as `license` and `metadata.version`, per the [Agent Skills specification](https://agentskills.io/specification.md).
-
 ## License
 
 MIT — see [LICENSE](LICENSE).
