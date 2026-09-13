@@ -16,6 +16,15 @@ trap 'rm -rf "$STAGE"' EXIT
 
 cd "$ROOT"
 
+# owner/repo for the release URLs. `gh` is authoritative; fall back to parsing
+# the origin remote (https, git@host:owner/repo, and ssh:// forms).
+SLUG="$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || true)"
+if [[ -z "$SLUG" ]]; then
+  SLUG="$(git remote get-url origin 2>/dev/null \
+    | sed -E 's#^[a-z+]+://##; s#^([^@/]+@)?[^/:]+[:/]##; s#\.git$##')"
+fi
+[[ "$SLUG" == */* ]] || { echo "error: could not derive owner/repo for the origin remote" >&2; exit 1; }
+
 if [[ -n "$(git status --porcelain)" ]]; then
   echo "error: working tree is dirty; commit before releasing" >&2
   exit 1
@@ -26,6 +35,7 @@ if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
 fi
 
 ARCHIVES=()
+ROWS=()
 for skill_dir in skills/*/; do
   skill="$(basename "$skill_dir")"
   [[ -f "$skill_dir/SKILL.md" ]] || continue
@@ -33,11 +43,45 @@ for skill_dir in skills/*/; do
   rsync -a --exclude='.DS_Store' "$skill_dir" "$STAGE/$skill/"
   (cd "$STAGE" && zip -rqX "$skill.zip" "$skill" -x '*.DS_Store')
   ARCHIVES+=("$STAGE/$skill.zip")
+
+  # First line of the description frontmatter field, for the release table.
+  description="$(awk '/^description:/{sub(/^description:[[:space:]]*/, ""); print; exit}' "$skill_dir/SKILL.md")"
+  ROWS+=("| \`$skill\` | [\`$skill.zip\`](https://github.com/$SLUG/releases/latest/download/$skill.zip) | $description |")
   echo "packaged $skill.zip"
 done
 
 [[ ${#ARCHIVES[@]} -gt 0 ]] || { echo "error: no skills found under skills/" >&2; exit 1; }
 
+NOTES="$STAGE/notes.md"
+{
+  echo "## Skills"
+  echo
+  echo "| Skill | Archive | Description |"
+  echo "| --- | --- | --- |"
+  printf '%s\n' "${ROWS[@]}"
+  echo
+  echo "## Install without the CLI"
+  echo
+  echo "Each archive unpacks to a single \`<skill>/\` directory, so it can be dropped straight into an agent's skills directory:"
+  echo
+  echo '```bash'
+  echo "curl -LO https://github.com/$SLUG/releases/latest/download/${ARCHIVES[0]##*/}"
+  echo "unzip ${ARCHIVES[0]##*/} -d ~/.agents/skills/"
+  echo '```'
+  echo
+  echo "Use \`~/.claude/skills/\` or any other agent's skills directory in place of \`~/.agents/skills/\`, or \`.agents/skills/\` for a project-scoped install."
+  echo
+  echo "The \`skills\` CLI can also consume a release archive URL directly:"
+  echo
+  echo '```bash'
+  echo "npx skills add https://github.com/$SLUG/releases/latest/download/${ARCHIVES[0]##*/}"
+  echo '```'
+  echo
+  echo "## Changelog"
+  echo
+  echo "**Full Changelog**: https://github.com/$SLUG/commits/$TAG"
+} > "$NOTES"
+
 git tag -a "$TAG" -m "$TAG"
 git push origin "$TAG"
-gh release create "$TAG" "${ARCHIVES[@]}" --title "$TAG" --generate-notes
+gh release create "$TAG" "${ARCHIVES[@]}" --title "$TAG" --notes-file "$NOTES"
