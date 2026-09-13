@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Package every skill in skills/ as a release archive and publish a GitHub release.
+# Package every skill in skills/ into a single release archive and publish a
+# GitHub release.
 #
 #   ./scripts/release.sh 1.0.0
 #
-# Each archive contains a single top-level <skill>/ directory, so it can be
-# unzipped straight into an agent's skills directory — and installed directly
-# with `npx skills add <archive-url>`.
+# The archive's top level is the skill directories themselves, so unzipping it
+# into an agent's skills directory installs every skill in place.
 set -euo pipefail
 
 VERSION="${1:?usage: release.sh <version>  (e.g. 1.0.0)}"
@@ -36,29 +36,39 @@ fi
 
 ARCHIVES=()
 ROWS=()
+NAMES=()
+BUNDLE="skills"
+
+# Stage every skill so the archive's top level is the skill directories
+# themselves: unzip it straight into an agent's skills directory and each skill
+# lands in the right place, with no intermediate folder to move.
+PACK="$STAGE/pack"
+mkdir -p "$PACK"
 for skill_dir in skills/*/; do
   skill="$(basename "$skill_dir")"
   [[ -f "$skill_dir/SKILL.md" ]] || continue
-  mkdir -p "$STAGE/$skill"
-  rsync -a --exclude='.DS_Store' "$skill_dir" "$STAGE/$skill/"
-  (cd "$STAGE" && zip -rqX "$skill.zip" "$skill" -x '*.DS_Store')
-  ARCHIVES+=("$STAGE/$skill.zip")
+  mkdir -p "$PACK/$skill"
+  rsync -a --exclude='.DS_Store' "$skill_dir" "$PACK/$skill/"
 
   # First line of the description frontmatter field, for the release table.
   description="$(awk '/^description:/{sub(/^description:[[:space:]]*/, ""); print; exit}' "$skill_dir/SKILL.md")"
-  ROWS+=("| \`$skill\` | [\`$skill.zip\`](https://github.com/$SLUG/releases/latest/download/$skill.zip) | $description |")
-  echo "packaged $skill.zip"
+  ROWS+=("| \`$skill\` | $description |")
+  NAMES+=("$skill")
+  echo "packaged $skill"
 done
 
-[[ ${#ARCHIVES[@]} -gt 0 ]] || { echo "error: no skills found under skills/" >&2; exit 1; }
+[[ ${#NAMES[@]} -gt 0 ]] || { echo "error: no skills found under skills/" >&2; exit 1; }
+
+( cd "$PACK" && zip -rqX "$STAGE/$BUNDLE.zip" "${NAMES[@]}" -x '*.DS_Store' )
+ARCHIVES+=("$STAGE/$BUNDLE.zip")
 
 NOTES="$STAGE/notes.md"
 {
-  echo "| Skill | Download | Description |"
-  echo "| --- | --- | --- |"
+  echo "| Skill | Description |"
+  echo "| --- | --- |"
   printf '%s\n' "${ROWS[@]}"
   echo
-  echo "Unzip into your agent's skills directory (\`~/.agents/skills/\`, \`~/.claude/skills/\`, …), or install directly with \`npx skills add <archive-url>\`."
+  echo "Download [\`$BUNDLE.zip\`](https://github.com/$SLUG/releases/latest/download/$BUNDLE.zip) for every skill in this repository. Unzip into your agent's skills directory (\`~/.agents/skills/\`, \`~/.claude/skills/\`, …)."
   echo
   echo "**Full Changelog**: https://github.com/$SLUG/commits/$TAG"
 } > "$NOTES"
